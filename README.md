@@ -108,7 +108,7 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 
 # JWT
-app.jwt.secret=lucidplus_super_secret_jwt_key_2024_make_it_long
+app.jwt.secret=your_jwt_secret
 app.jwt.expiration=86400000
 
 # Server
