@@ -82,7 +82,7 @@ src/main/java/com/example/lucidplus_onboarding/
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/ansonapeter/fintech-onboarding-api.git
+git clone https://github.com/YOUR_USERNAME/fintech-onboarding-api.git
 cd fintech-onboarding-api
 ```
 
