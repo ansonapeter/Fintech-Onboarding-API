@@ -9,11 +9,11 @@ Built as part of the **LucidPlus IT Solutions – Junior Java Developer Assignme
 
 | Technology | Version |
 |------------|---------|
-| Java | 17+ |
+| Java | 21 |
 | Spring Boot | 4.0.5 |
 | Spring Security | JWT-based |
 | Spring Data JPA | Hibernate ORM |
-| MySQL | 8.0+ |
+| MySQL | 8.0 |
 | Lombok | Latest |
 | JJWT | 0.11.5 |
 
