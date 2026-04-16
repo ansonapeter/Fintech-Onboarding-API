@@ -1,0 +1,583 @@
+{
+  "info": {
+    "_postman_id": "lucidplus-fintech-onboarding-2026",
+    "name": "LucidPlus Fintech Onboarding API",
+    "description": "Complete API collection for LucidPlus IT Solutions – Junior Java Developer Assignment. Test all endpoints in order: Register → Verify OTP → Login → Transfer → Transactions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user1_mobile",
+      "value": "9999999999",
+      "type": "string"
+    },
+    {
+      "key": "user2_mobile",
+      "value": "8888888888",
+      "type": "string"
+    },
+    {
+      "key": "user1_otp",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user2_otp",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Step 1 – Register User 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201 Created', function () { pm.response.to.have.status(201); });",
+              "pm.test('Registration successful', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  pm.expect(json.message).to.include('OTP');",
+              "  var otpMatch = json.message.match(/OTP: (\\d+)/);",
+              "  if (otpMatch) { pm.collectionVariables.set('user1_otp', otpMatch[1]); console.log('User 1 OTP saved:', otpMatch[1]); }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@gmail.com\",\n    \"mobile\": \"{{user1_mobile}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "register"]
+        },
+        "description": "Registers User 1. The OTP is returned in the response message and auto-saved to collection variable 'user1_otp'."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n    \"success\": true,\n    \"message\": \"User registered. OTP: 206365\",\n    \"data\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Step 2 – Verify OTP (User 1)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('OTP verified and account created', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  pm.expect(json.message).to.include('Account created');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"mobile\": \"{{user1_mobile}}\",\n    \"otp\": \"{{user1_otp}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/verify-otp",
+          "host": ["{{base_url}}"],
+          "path": ["api", "verify-otp"]
+        },
+        "description": "Verifies OTP for User 1. Uses the OTP auto-saved from Step 1. Creates wallet with ₹1000 default balance."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n    \"success\": true,\n    \"message\": \"OTP verified. Account created with ₹1000 balance.\",\n    \"data\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Step 3 – Register User 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201 Created', function () { pm.response.to.have.status(201); });",
+              "pm.test('Registration successful', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  var otpMatch = json.message.match(/OTP: (\\d+)/);",
+              "  if (otpMatch) { pm.collectionVariables.set('user2_otp', otpMatch[1]); console.log('User 2 OTP saved:', otpMatch[1]); }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Jane Smith\",\n    \"email\": \"jane@gmail.com\",\n    \"mobile\": \"{{user2_mobile}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "register"]
+        },
+        "description": "Registers User 2 (the transfer receiver). OTP auto-saved to 'user2_otp'."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n    \"success\": true,\n    \"message\": \"User registered. OTP: 849201\",\n    \"data\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Step 4 – Verify OTP (User 2)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('OTP verified and account created', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  pm.expect(json.message).to.include('Account created');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"mobile\": \"{{user2_mobile}}\",\n    \"otp\": \"{{user2_otp}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/verify-otp",
+          "host": ["{{base_url}}"],
+          "path": ["api", "verify-otp"]
+        },
+        "description": "Verifies OTP for User 2. Creates their wallet with ₹1000 balance."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n    \"success\": true,\n    \"message\": \"OTP verified. Account created with ₹1000 balance.\",\n    \"data\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Step 5 – Login (User 1)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('JWT token received and saved', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  pm.expect(json.data).to.have.property('token');",
+              "  pm.collectionVariables.set('jwt_token', json.data.token);",
+              "  console.log('JWT token saved successfully');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"identifier\": \"{{user1_mobile}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "login"]
+        },
+        "description": "Logs in User 1 using mobile number. JWT token is automatically extracted from the response and saved to 'jwt_token' variable — no manual copy needed."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n    \"success\": true,\n    \"message\": \"Login successful\",\n    \"data\": {\n        \"token\": \"eyJhbGciOiJIUzI1NiJ9...\",\n        \"name\": \"John Doe\",\n        \"email\": \"john@gmail.com\",\n        \"mobile\": \"9999999999\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Step 5b – Login with Email (alternate)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Login with email works', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  if (json.data && json.data.token) {",
+              "    pm.collectionVariables.set('jwt_token', json.data.token);",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"identifier\": \"john@gmail.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "login"]
+        },
+        "description": "Alternative login using email instead of mobile number. Demonstrates the flexible identifier field."
+      },
+      "response": []
+    },
+    {
+      "name": "Step 6 – Transfer Money",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Transfer successful', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  pm.expect(json.message).to.include('successful');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"senderId\": 1,\n    \"receiverId\": 2,\n    \"amount\": 200\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/transfer",
+          "host": ["{{base_url}}"],
+          "path": ["api", "transfer"]
+        },
+        "description": "Transfers ₹200 from User 1 (account 1) to User 2 (account 2). JWT token is auto-injected from the saved variable. Uses @Transactional to ensure atomic debit and credit."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n    \"success\": true,\n    \"message\": \"Transfer successful\",\n    \"data\": null\n}"
+        },
+        {
+          "name": "Insufficient Balance",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n    \"success\": false,\n    \"message\": \"Insufficient balance\",\n    \"data\": null\n}"
+        },
+        {
+          "name": "Self Transfer Error",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n    \"success\": false,\n    \"message\": \"Cannot transfer to yourself\",\n    \"data\": null\n}"
+        },
+        {
+          "name": "Receiver Not Found",
+          "status": "Not Found",
+          "code": 404,
+          "body": "{\n    \"success\": false,\n    \"message\": \"Receiver account not found\",\n    \"data\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Step 6b – Transfer (Insufficient Balance Test)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Insufficient balance handled correctly', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.false;",
+              "  pm.expect(json.message).to.include('Insufficient');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"senderId\": 1,\n    \"receiverId\": 2,\n    \"amount\": 99999\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/transfer",
+          "host": ["{{base_url}}"],
+          "path": ["api", "transfer"]
+        },
+        "description": "Error case: tries to transfer ₹99999 which exceeds available balance. Should return success: false with 'Insufficient balance' message."
+      },
+      "response": []
+    },
+    {
+      "name": "Step 6c – Transfer (Self Transfer Test)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Self transfer blocked', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.false;",
+              "  pm.expect(json.message).to.include('yourself');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"senderId\": 1,\n    \"receiverId\": 1,\n    \"amount\": 100\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/transfer",
+          "host": ["{{base_url}}"],
+          "path": ["api", "transfer"]
+        },
+        "description": "Error case: sender and receiver are the same account. Should return 'Cannot transfer to yourself'."
+      },
+      "response": []
+    },
+    {
+      "name": "Step 7 – Transaction History (User 1)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Transactions returned', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  pm.expect(json.data).to.be.an('array');",
+              "  console.log('Transaction count:', json.data.length);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+        },
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/transactions/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "transactions", "1"]
+        },
+        "description": "Fetches transaction history for User 1 (userId=1). Returns list of all DEBIT entries sorted by latest first."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n    \"success\": true,\n    \"message\": \"Transactions fetched\",\n    \"data\": [\n        {\n            \"id\": 1,\n            \"amount\": 200.00,\n            \"type\": \"DEBIT\",\n            \"timestamp\": \"2026-04-14T11:43:31\"\n        }\n    ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Step 7b – Transaction History (User 2)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('User 2 transactions returned', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.success).to.be.true;",
+              "  pm.expect(json.data).to.be.an('array');",
+              "  console.log('User 2 transaction count:', json.data.length);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+        },
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/transactions/2",
+          "host": ["{{base_url}}"],
+          "path": ["api", "transactions", "2"]
+        },
+        "description": "Fetches transaction history for User 2 (userId=2). Should show a CREDIT entry from the transfer received from User 1."
+      },
+      "response": []
+    },
+    {
+      "name": "Security – No Token (401 Test)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Unauthorized without token', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/transactions/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "transactions", "1"]
+        },
+        "description": "Security test: accessing a protected endpoint without a JWT token should return 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "Security – Invalid Token (401 Test)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Rejected with invalid token', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer this.is.an.invalid.token" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/transactions/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "transactions", "1"]
+        },
+        "description": "Security test: accessing a protected endpoint with a tampered/invalid JWT should return 401."
+      },
+      "response": []
+    }
+  ]
+}
