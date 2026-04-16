@@ -13,9 +13,10 @@ Built as part of the **LucidPlus IT Solutions – Junior Java Developer Assignme
 | Spring Boot | 4.0.5 |
 | Spring Security | JWT-based |
 | Spring Data JPA | Hibernate ORM |
-| MySQL | 8.0 |
+| MySQL | 8.0+ |
 | Lombok | Latest |
 | JJWT | 0.11.5 |
+| Maven | 3.6+ |
 
 ---
 
@@ -75,31 +76,42 @@ src/main/java/com/example/lucidplus_onboarding/
 ## ⚙️ Setup & Installation
 
 ### Prerequisites
-- Java 17 or higher
+
+- Java 21 or higher
 - MySQL 8.0 or higher
 - Maven 3.6+
 - Postman (for API testing)
 
 ### Step 1: Clone the Repository
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/fintech-onboarding-api.git
-cd fintech-onboarding-api
+git clone https://github.com/ansonapeter/lucidplus-onboarding.git
+cd lucidplus-onboarding
 ```
 
 ### Step 2: Create MySQL Database
+
 ```sql
 CREATE DATABASE lucidplus_onboarding;
 ```
 
 ### Step 3: Configure application.properties
-Create `src/main/resources/application.properties` using the example file:
+
+Create `src/main/resources/application.properties`. A template is provided in `application.properties.example` — copy and fill in your values:
+
+```bash
+cp src/main/resources/application.properties.example src/main/resources/application.properties
+```
+
+Then update with your credentials:
+
 ```properties
 spring.application.name=lucidplus-onboarding
 
 # MySQL Configuration
 spring.datasource.url=jdbc:mysql://localhost:3306/lucidplus_onboarding?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-spring.datasource.username=your_mysql_username
-spring.datasource.password=your_mysql_password
+spring.datasource.username=YOUR_MYSQL_USERNAME
+spring.datasource.password=YOUR_MYSQL_PASSWORD
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 # JPA / Hibernate
@@ -108,7 +120,7 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 
 # JWT
-app.jwt.secret=your_jwt_secret
+app.jwt.secret=lucidplus_super_secret_jwt_key_2024_make_it_long
 app.jwt.expiration=86400000
 
 # Server
@@ -116,13 +128,12 @@ server.port=8080
 ```
 
 ### Step 4: Run the Application
+
 ```bash
 mvn spring-boot:run
 ```
 
-The server will start at: `http://localhost:8080`
-
-Tables will be **auto-created** by Hibernate on first run.
+The server starts at `http://localhost:8080`. All three database tables are **auto-created by Hibernate** on first run — no manual SQL migration needed.
 
 ---
 
@@ -131,26 +142,29 @@ Tables will be **auto-created** by Hibernate on first run.
 ### Tables
 
 **users**
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | BIGINT (PK) | Auto-generated |
 | name | VARCHAR | User full name |
 | email | VARCHAR (unique) | User email |
-| mobile | VARCHAR (unique) | 10-digit mobile |
+| mobile | VARCHAR (unique) | 10-digit mobile number |
 | otp | VARCHAR | One-time password |
-| otp_expiry | DATETIME | OTP expiry time |
+| otp_expiry | DATETIME | OTP expiry time (5 min) |
 | status | ENUM | PENDING / ACTIVE |
-| created_at | DATETIME | Registration time |
+| created_at | DATETIME | Registration timestamp |
 
 **accounts**
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | BIGINT (PK) | Auto-generated |
-| user_id | BIGINT (FK) | References users |
-| balance | DECIMAL(15,2) | Current balance |
-| created_at | DATETIME | Account creation time |
+| user_id | BIGINT (FK) | References users.id |
+| balance | DECIMAL(15,2) | Current wallet balance |
+| created_at | DATETIME | Account creation timestamp |
 
 **transactions**
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | BIGINT (PK) | Auto-generated |
@@ -159,7 +173,7 @@ Tables will be **auto-created** by Hibernate on first run.
 | amount | DECIMAL(15,2) | Transfer amount |
 | type | ENUM | DEBIT / CREDIT |
 | user_id | BIGINT | Owner of this record |
-| timestamp | DATETIME | Transaction time |
+| timestamp | DATETIME | Transaction timestamp |
 
 ---
 
@@ -167,13 +181,16 @@ Tables will be **auto-created** by Hibernate on first run.
 
 This API uses **JWT (JSON Web Token)** based authentication.
 
-- Public endpoints: `/api/register`, `/api/verify-otp`, `/api/login`
-- Protected endpoints: `/api/transfer`, `/api/transactions/{userId}`
+- **Public endpoints** (no token required): `/api/register`, `/api/verify-otp`, `/api/login`
+- **Protected endpoints** (JWT required): `/api/transfer`, `/api/transactions/{userId}`
 
-To access protected endpoints, include the JWT token in the request header:
+Include the JWT token in the `Authorization` header for all protected requests:
+
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+Accessing a protected endpoint without a valid token returns `401 Unauthorized`.
 
 ---
 
@@ -182,9 +199,17 @@ Authorization: Bearer <your_jwt_token>
 ### A. User Registration with OTP Flow
 
 #### 1. Register User
+
 ```
 POST /api/register
 ```
+
+| Field | Type | Validation |
+|-------|------|------------|
+| name | String | Required, not blank |
+| email | String | Required, valid email format |
+| mobile | String | Required, 10-digit number |
+
 **Request Body:**
 ```json
 {
@@ -193,7 +218,8 @@ POST /api/register
     "mobile": "9999999999"
 }
 ```
-**Response:**
+
+**Response — `201 Created`:**
 ```json
 {
     "success": true,
@@ -201,14 +227,24 @@ POST /api/register
     "data": null
 }
 ```
-> ⚠️ OTP expires in 5 minutes. In production this would be sent via SMS.
+
+> ⚠️ The OTP is returned in the response message for development purposes. In production it would be delivered via SMS. OTP expires in **5 minutes**.
+
+**Error responses:**
+
+| HTTP Status | Message |
+|-------------|---------|
+| `400 Bad Request` | Validation error (invalid email, missing field, etc.) |
+| `409 Conflict` | Email or mobile already registered |
 
 ---
 
 #### 2. Verify OTP
+
 ```
 POST /api/verify-otp
 ```
+
 **Request Body:**
 ```json
 {
@@ -216,7 +252,8 @@ POST /api/verify-otp
     "otp": "206365"
 }
 ```
-**Response:**
+
+**Response — `200 OK`:**
 ```json
 {
     "success": true,
@@ -224,25 +261,36 @@ POST /api/verify-otp
     "data": null
 }
 ```
-> ✅ This automatically creates a wallet account with ₹1000 default balance.
+
+> ✅ Successful OTP verification automatically creates a wallet account with a default balance of **₹1000**. User status changes from `PENDING` to `ACTIVE`.
+
+**Error responses:**
+
+| HTTP Status | Message |
+|-------------|---------|
+| `400 Bad Request` | OTP expired or invalid |
+| `404 Not Found` | Mobile number not found |
 
 ---
 
 ### B. Login
 
 #### 3. Login
+
 ```
 POST /api/login
 ```
+
 **Request Body:**
 ```json
 {
     "identifier": "9999999999"
 }
 ```
-> Can use mobile number or email as identifier.
 
-**Response:**
+> The `identifier` field accepts either a **mobile number** or an **email address**.
+
+**Response — `200 OK`:**
 ```json
 {
     "success": true,
@@ -255,21 +303,32 @@ POST /api/login
     }
 }
 ```
-> 🔑 Copy the token — required for all protected endpoints.
+
+> 🔑 Copy the `token` value — it is required for all protected endpoints.
+
+**Error responses:**
+
+| HTTP Status | Message |
+|-------------|---------|
+| `404 Not Found` | User not found |
+| `403 Forbidden` | Account not yet verified (OTP pending) |
 
 ---
 
 ### C. Transfer Money
 
 #### 4. Transfer
+
 ```
 POST /api/transfer
 ```
+
 **Headers:**
 ```
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
+
 **Request Body:**
 ```json
 {
@@ -278,7 +337,8 @@ Content-Type: application/json
     "amount": 200
 }
 ```
-**Response:**
+
+**Response — `200 OK`:**
 ```json
 {
     "success": true,
@@ -287,26 +347,33 @@ Content-Type: application/json
 }
 ```
 
-**Error Cases:**
-```json
-{ "success": false, "message": "Insufficient balance", "data": null }
-{ "success": false, "message": "Cannot transfer to yourself", "data": null }
-{ "success": false, "message": "Receiver account not found", "data": null }
-```
+**Error responses:**
+
+| HTTP Status | Message |
+|-------------|---------|
+| `400 Bad Request` | `"Insufficient balance"` |
+| `400 Bad Request` | `"Cannot transfer to yourself"` |
+| `404 Not Found` | `"Receiver account not found"` |
+| `401 Unauthorized` | Missing or invalid JWT token |
+
+> 🔒 The transfer is wrapped in `@Transactional` — both the debit and credit happen atomically. If either operation fails, the entire transfer is rolled back.
 
 ---
 
 ### D. Transaction History
 
 #### 5. Get Transactions
+
 ```
 GET /api/transactions/{userId}
 ```
+
 **Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
-**Response:**
+
+**Response — `200 OK`:**
 ```json
 {
     "success": true,
@@ -322,45 +389,85 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
----
+**Error responses:**
 
-## ✅ Key Concepts Implemented
-
-| Concept | Implementation |
-|---------|---------------|
-| Layered Architecture | Controller → Service → Repository |
-| JWT Security | JwtFilter validates token on every request |
-| OTP Flow | 6-digit OTP with 5-minute expiry |
-| Transaction Management | @Transactional ensures atomic money transfers |
-| Exception Handling | GlobalExceptionHandler with custom exceptions |
-| Input Validation | @Valid, @NotBlank, @Email, @Pattern annotations |
-| Database Design | 3 normalized tables with proper relationships |
-
----
-
-## 🧪 Testing Flow
-
-Test the APIs in this exact order:
-
-```
-1. Register User 1    →  POST /api/register
-2. Verify User 1 OTP  →  POST /api/verify-otp
-3. Register User 2    →  POST /api/register
-4. Verify User 2 OTP  →  POST /api/verify-otp
-5. Login User 1       →  POST /api/login  (copy JWT token)
-6. Transfer Money     →  POST /api/transfer  (use JWT token)
-7. Check History      →  GET /api/transactions/1  (use JWT token)
-```
+| HTTP Status | Message |
+|-------------|---------|
+| `401 Unauthorized` | Missing or invalid JWT token |
+| `404 Not Found` | User not found |
 
 ---
 
 ## 📦 Postman Collection
 
-Import the included `LucidPlus-Onboarding-API.postman_collection.json` file into Postman to test all endpoints with pre-configured requests.
+Import `LucidPlus-Onboarding-API_postman_collection.json` into Postman to test all endpoints with pre-configured requests.
+
+### Postman Environment Variables
+
+The collection uses the following variables — set these before running:
+
+| Variable | Default Value | Description |
+|----------|--------------|-------------|
+| `base_url` | `http://localhost:8080` | API server base URL |
+| `jwt_token` | *(auto-filled)* | JWT token — auto-saved after Step 5 (Login) |
+| `user1_mobile` | `9999999999` | Mobile number for User 1 |
+| `user2_mobile` | `8888888888` | Mobile number for User 2 |
+| `user1_otp` | *(auto-filled)* | OTP for User 1 — auto-extracted after Step 1 |
+| `user2_otp` | *(auto-filled)* | OTP for User 2 — auto-extracted after Step 3 |
+
+> The Postman collection includes automated test scripts. OTPs are **automatically extracted** from the registration response and saved to collection variables — no manual copy-paste needed. The JWT token is also saved automatically after login.
+
+---
+
+## 🧪 Testing Flow
+
+Run requests in this exact order:
+
+```
+1. Register User 1       →  POST /api/register         (OTP auto-saved)
+2. Verify User 1 OTP     →  POST /api/verify-otp        (account created)
+3. Register User 2       →  POST /api/register         (OTP auto-saved)
+4. Verify User 2 OTP     →  POST /api/verify-otp        (account created)
+5. Login User 1          →  POST /api/login             (JWT token auto-saved)
+6. Transfer Money        →  POST /api/transfer          (uses saved JWT)
+7. Check History User 1  →  GET  /api/transactions/1    (should show DEBIT)
+8. Check History User 2  →  GET  /api/transactions/2    (should show CREDIT)
+```
+
+The collection also includes dedicated **error case** and **security** tests:
+- Transfer with insufficient balance
+- Self-transfer attempt
+- Access protected endpoint without token (`401`)
+- Access protected endpoint with invalid/tampered token (`401`)
+
+---
+
+## ✅ Key Concepts Implemented
+
+| Concept | Implementation |
+|---------|----------------|
+| Layered Architecture | Controller → Service → Repository |
+| JWT Security | `JwtFilter` validates token on every protected request |
+| OTP Flow | 6-digit OTP with 5-minute expiry, returned in response for dev |
+| Atomic Transactions | `@Transactional` ensures both debit and credit succeed or both roll back |
+| Exception Handling | `GlobalExceptionHandler` with custom exception classes |
+| Input Validation | `@Valid`, `@NotBlank`, `@Email`, `@Pattern` annotations |
+| Database Design | 3 normalized tables with proper FK relationships |
+| Flexible Login | `identifier` field accepts mobile number or email |
+
+---
+
+## ⚠️ Assumptions & Limitations
+
+- OTP is returned in the API response for **development/testing purposes only**. In a production system it would be delivered via SMS (e.g., Twilio) and never exposed in the response body.
+- All accounts are created with a hardcoded default balance of **₹1000** on OTP verification.
+- The application is **single-currency** (INR only).
+- No pagination is implemented for transaction history — all records are returned in a single response.
+- No email/SMS integration is included in this version.
 
 ---
 
 ## 👨‍💻 Author
 
-Built for **LucidPlus IT Solutions** – Junior Java Developer Assignment  
-
+Built for **LucidPlus IT Solutions** – Junior Java Developer Assignment
+Submission Deadline: April 16, 2026
